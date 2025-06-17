@@ -30,6 +30,12 @@ import SarrePage from "./Components/SarrePage";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 
+
+// In your App.js or router configuration
+import PaymentDetails from './Components/PaymentPage';
+import PaymentSuccess from './Components/PayementSuccess';
+import PaymentFailed from './Components/PayemantFailed';
+
 // Stripe public key from .env
 const stripePromise = loadStripe("pk_test_51RHTx5RtsHUrAvdwQVTqTRbQHul6Y5wePdlMdWH3aZAMzQXFXWFjWLLXU2KIEGsbedapU9vOEmMcWtIxpu9Gi2WC00xVra2QmU");
 
@@ -110,6 +116,11 @@ function App() {
         <Route path="/kurta" element={<KurtaPage />} />
         <Route path="/saree" element={<SarrePage />} />
         <Route path="/cart" element={<CartDrawer />} />
+        // Add these routes
+<Route path="/payment-details" element={<PaymentDetails />} />
+<Route path="/payment-success" element={<PaymentSuccess />} />
+<Route path="/payment-failed" element={<PaymentFailed />} />
+
       </Routes>
     </>
   );
