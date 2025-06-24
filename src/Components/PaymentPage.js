@@ -5,18 +5,48 @@ import { useState } from 'react';
 const PaymentDetails = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { userId, totalAmount, cartItems = [] } = location.state || {};
+  const { userId, totalAmount, cartItems = [], deliveryAddress } = location.state || {};
 
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
 
-  const buildImageUrl = (imgPath) => {
-    if (!imgPath || imgPath.length === 0) return '/placeholder-image.jpg';
-    const cleanedPath = imgPath.startsWith('/') ? imgPath.slice(1) : imgPath;
-    return `https://backend.pinkstories.ae/${cleanedPath}`;
-  };
+  // Create order after successful payment
+  const createOrder = async (paymentIntentId) => {
+    try {
+      const response = await fetch('http://localhost:7000/api/orders/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          paymentIntentId,
+          items: cartItems.map(item => ({
+            productId: item.id || item._id,
+            name: item.name,
+            image: item.image,
+            price: item.price,
+            quantity: item.quantity,
+            selectedSize: item.selectedSize,
+            selectedColor: item.selectedColor
+          })),
+          totalAmount,
+          deliveryAddress
+        })
+      });
 
+      const data = await response.json();
+      if (data.success) {
+        console.log('Order created successfully:', data.order);
+        return data.order;
+      } else {
+        console.error('Failed to create order:', data.message);
+        return null;
+      }
+    } catch (error) {
+      console.error('Error creating order:', error);
+      return null;
+    }
+  };
 
   const handlePayment = async () => {
     if (!stripe || !elements) return;
@@ -49,16 +79,34 @@ const PaymentDetails = () => {
           }
         });
       } else if (result.paymentIntent.status === 'succeeded') {
-        // Navigate to success page with payment details
+        // Create order in the database
+        const order = await createOrder(result.paymentIntent.id);
+        
+        // Update stock quantity on backend
+        try {
+          await fetch('http://localhost:7000/api/products/update-quantity', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cartItems }),
+          });
+        } catch (stockErr) {
+          console.error('⚠️ Stock update failed:', stockErr);
+          // You can optionally toast/log this without blocking user
+        }
+      
+        // Navigate to success page with order details
         navigate('/payment-success', {
           state: {
             paymentIntent: result.paymentIntent,
             amount: totalAmount,
             userId: userId,
-            cartItems: cartItems
+            cartItems: cartItems,
+            order: order, // Include order details
+            orderId: order?.orderId // Include order ID for easy access
           }
         });
       }
+      
     } catch (err) {
       console.error(err);
       // Navigate to failure page with generic error
@@ -85,7 +133,26 @@ const PaymentDetails = () => {
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-2xl shadow-lg mt-10">
       <h1 className="text-3xl font-bold mb-6 text-center">Payment Details</h1>
 
-      {/* User & Product Summary */}
+      {/* Delivery Address */}
+      {deliveryAddress && (
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold mb-4">Delivery Address</h2>
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <p className="font-medium">{deliveryAddress.fullName}</p>
+            <p className="text-gray-600">{deliveryAddress.addressLine1}</p>
+            {deliveryAddress.addressLine2 && (
+              <p className="text-gray-600">{deliveryAddress.addressLine2}</p>
+            )}
+            <p className="text-gray-600">
+              {deliveryAddress.city}, {deliveryAddress.state} {deliveryAddress.postalCode}
+            </p>
+            <p className="text-gray-600">{deliveryAddress.country}</p>
+            <p className="text-gray-600">Phone: {deliveryAddress.phoneNumber}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Order Summary */}
       <div className="mb-6">
         <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
         <div className="bg-gray-50 p-4 rounded-lg">
@@ -93,19 +160,28 @@ const PaymentDetails = () => {
           <p className="mb-4"><span className="font-medium">Items:</span> {cartItems.length}</p>
           
           {cartItems.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {cartItems.map((item, index) => (
-                <div key={index} className="flex items-center space-x-3 p-2 bg-white rounded">
+                <div key={index} className="flex items-center gap-4 p-3 bg-white rounded-lg">
                   <img
-                    src={item.images?.length ? buildImageUrl(item.images[0]) : '/placeholder-image.jpg'}
-                    alt={item.name || 'Product'}
-                    className="w-12 h-12 object-cover rounded"
+                    src={item.image}
+                    alt={item.name}
+                    className="w-16 h-16 object-cover rounded-lg"
+                    onError={(e) => {
+                      e.target.src = '/placeholder-image.jpg';
+                    }}
                   />
-                  <div className="flex-1">
-                    <p className="font-medium">{item.name || 'Product'}</p>
-                    <p className="text-sm text-gray-600">Qty: {item.quantity || 1}</p>
+                  <div className="flex-grow">
+                    <h4 className="font-medium text-gray-900">{item.name}</h4>
+                    <div className="text-sm text-gray-600">
+                      {item.selectedSize && <span>Size: {item.selectedSize}</span>}
+                      {item.selectedColor && <span className="ml-3">Color: {item.selectedColor}</span>}
+                    </div>
+                    <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
                   </div>
-                  <p className="font-medium">AED {item.price || 0}</p>
+                  <div className="text-right">
+                    <p className="font-medium">AED {(item.price * item.quantity).toFixed(2)}</p>
+                  </div>
                 </div>
               ))}
             </div>

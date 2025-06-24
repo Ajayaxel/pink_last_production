@@ -8,7 +8,7 @@ const ProductDetailsPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { products, fetchProducts } = useProductStore();
-  const { addToCart, loading: cartLoading } = useCartStore();
+  const { addToCart, loading: cartLoading, cart, fetchCart } = useCartStore();
 
   const [item, setItem] = useState(null);
   const [quantity, setQuantity] = useState(1);
@@ -60,15 +60,23 @@ const ProductDetailsPage = () => {
     return () => window.removeEventListener('userLogin', handleUserLogin);
   }, []);
 
-  // Load item
+  // Load item and fetch cart when user is authenticated
   useEffect(() => {
     const loadProduct = async () => {
       if (!products || products.length === 0) await fetchProducts();
       const found = products.find((p) => p._id === id);
       setItem(found);
+    
     };
     loadProduct();
   }, [id, products]);
+
+  // Fetch cart when user is authenticated
+  useEffect(() => {
+    if (isAuthenticated && user?.id) {
+      fetchCart(user.id);
+    }
+  }, [isAuthenticated, user?.id, fetchCart]);
 
   // Reset cart message after 3 seconds
   useEffect(() => {
@@ -84,7 +92,6 @@ const ProductDetailsPage = () => {
     setStartX(x - sliderRef.current.offsetLeft);
     setScrollLeft(sliderRef.current.scrollLeft);
   };
-
 
   // Enhanced size variant extraction
   const getAvailableSizes = () => {
@@ -102,6 +109,19 @@ const ProductDetailsPage = () => {
       pakistan: demoPakistanSizes,
       hasSizes: demoIndianSizes.length > 0 || demoPakistanSizes.length > 0
     };
+  };
+
+  // Check if product with same attributes already exists in cart
+  const getExistingCartItem = () => {
+    if (!cart || !cart.items) return null;
+    
+    const sizeString = selectedSize ? `${selectedSizeType.toUpperCase()}: ${selectedSize}` : null;
+    
+    return cart.items.find(cartItem => 
+      cartItem.productId === item._id &&
+      cartItem.selectedSize === sizeString &&
+      cartItem.selectedColor === selectedColor
+    );
   };
 
   const handleAddToCart = async () => {
@@ -125,6 +145,29 @@ const ProductDetailsPage = () => {
       setCartMessage('Please select a color before adding to cart.');
       return;
     }
+
+    // Check if item already exists in cart
+    const existingCartItem = getExistingCartItem();
+    
+    if (existingCartItem) {
+      const newQuantity = existingCartItem.quantity + quantity;
+      
+      // Check if new quantity exceeds stock
+      if (newQuantity > item.stockQuantity) {
+        setCartMessage(`Cannot add ${quantity} more. Only ${item.stockQuantity - existingCartItem.quantity} available.`);
+        return;
+      }
+      
+      setCartMessage(`✓ Updated quantity to ${newQuantity} in cart!`);
+    } else {
+      // Check if quantity exceeds stock for new item
+      if (quantity > item.stockQuantity) {
+        setCartMessage(`Only ${item.stockQuantity} items available in stock.`);
+        return;
+      }
+      
+      setCartMessage('✓ Added to cart successfully!');
+    }
     
     const cartItem = {
       _id: item._id,
@@ -136,7 +179,6 @@ const ProductDetailsPage = () => {
     
     try {
       await addToCart(user.id, cartItem);
-      setCartMessage('✓ Added to cart successfully!');
     } catch (error) {
       console.error('Add to cart error:', error);
       setCartMessage(error.message || 'Failed to add item to cart');
@@ -164,33 +206,64 @@ const ProductDetailsPage = () => {
       return;
     }
   
+    // Build proper image URL using the same logic as in the component
+    const getImageUrl = () => {
+      if (item.images && item.images.length > 0) {
+        return buildImageUrl(item.images[selectedImageIndex]);
+      } else if (item.image) {
+        return buildImageUrl(item.image);
+      }
+      return '/placeholder-image.jpg';
+    };
+  
     // Build the cartItems array for this single product
     const cartItems = [
       {
-        name: item.name,
-        image: item.image,
+        productId: item._id,
+        name: item.productName,
+        image: getImageUrl(), // Use the proper image URL
         price: item.price,
+        discountedPrice: item.price - (item.price * item.discount) / 100,
         quantity,
         selectedSize: selectedSize ? `${selectedSizeType.toUpperCase()}: ${selectedSize}` : null,
-        selectedColor
+        selectedColor,
+        selectedSizeType,
+        sku: item.sku,
+        stockQuantity: item.stockQuantity
       }
     ];
   
-    const totalAmount = item.price * quantity;
+    const subtotal = (item.price - (item.price * item.discount) / 100) * quantity;
+    const totalAmount = subtotal; // You can add tax, shipping, etc. here
   
-    navigate(`/payment-details/${item._id}`, {
+    // Navigate to checkout page instead of payment details
+    navigate('/checkout', {
       state: {
         userId: user.id,
+        cartItems,
+        subtotal,
         totalAmount,
-        cartItems
+        fromBuyNow: true, // Flag to indicate this came from Buy Now
+        userEmail: user.emailId
       }
     });
   };
-  
   const buildImageUrl = (imgPath) => {
     if (!imgPath || imgPath.length === 0) return '/placeholder-image.jpg';
     const cleanedPath = imgPath.startsWith('/') ? imgPath.slice(1) : imgPath;
     return `https://backend.pinkstories.ae/${cleanedPath}`;
+  };
+
+  // Get current quantity in cart for this specific product variant
+  const getCurrentCartQuantity = () => {
+    const existingItem = getExistingCartItem();
+    return existingItem ? existingItem.quantity : 0;
+  };
+
+  // Get maximum quantity that can be added
+  const getMaxQuantityToAdd = () => {
+    const currentCartQuantity = getCurrentCartQuantity();
+    return Math.max(0, item.stockQuantity - currentCartQuantity);
   };
 
   if (!item) {
@@ -209,6 +282,8 @@ const ProductDetailsPage = () => {
   const discountedPrice = item.price ? item.price - (item.price * item.discount) / 100 : 0;
   const productImages = item.images || [];
   const currentSizes = sizeInfo[selectedSizeType] || [];
+  const currentCartQuantity = getCurrentCartQuantity();
+  const maxQuantityToAdd = getMaxQuantityToAdd();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -244,7 +319,6 @@ const ProductDetailsPage = () => {
               </span>
             )}
           </div>
-          
         </div>
       </div>
 
@@ -411,6 +485,20 @@ const ProductDetailsPage = () => {
                 </div>
               )}
 
+              {/* Current Cart Status */}
+              {currentCartQuantity > 0 && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-blue-800 text-sm">
+                    <span className="font-medium">Already in cart:</span> {currentCartQuantity} item{currentCartQuantity > 1 ? 's' : ''}
+                    {selectedSize && selectedColor && (
+                      <span className="block mt-1">
+                        Size: {selectedSizeType.toUpperCase()} - {selectedSize}, Color: {selectedColor}
+                      </span>
+                    )}
+                  </p>
+                </div>
+              )}
+
               {/* Quantity Selection */}
               <div className="space-y-3">
                 <h3 className="font-semibold text-gray-900">Quantity:</h3>
@@ -424,16 +512,17 @@ const ProductDetailsPage = () => {
                   </button>
                   <span className="px-4 py-2 min-w-[3rem] text-center border-x border-gray-300 font-medium">{quantity}</span>
                   <button 
-                    onClick={() => setQuantity(Math.min(item.stockQuantity, quantity + 1))} 
+                    onClick={() => setQuantity(Math.min(maxQuantityToAdd || item.stockQuantity, quantity + 1))} 
                     className="px-4 py-2 hover:bg-gray-100 transition-colors duration-200 disabled:opacity-50"
-                    disabled={quantity >= item.stockQuantity}
+                    disabled={quantity >= (maxQuantityToAdd || item.stockQuantity)}
                   >
                     +
                   </button>
                 </div>
-                <p className="text-sm text-gray-500">
-                  Maximum available: {item.stockQuantity} units
-                </p>
+                <div className="text-sm text-gray-500 space-y-1">
+                  <p>Available to add: {maxQuantityToAdd} units</p>
+                  <p>Total stock: {item.stockQuantity} units</p>
+                </div>
               </div>
 
               {/* Product Details */}
@@ -483,14 +572,16 @@ const ProductDetailsPage = () => {
                 <button
                   className="w-full bg-pink-100 hover:bg-pink-200 text-pink-800 py-3 px-6 rounded-lg font-semibold transition-colors duration-200 border border-pink-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={handleAddToCart}
-                  disabled={item.stockQuantity === 0 || cartLoading}
+                  disabled={item.stockQuantity === 0 || cartLoading || maxQuantityToAdd === 0}
                 >
                   {cartLoading ? (
                     <div className="flex items-center justify-center gap-2">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-pink-800"></div>
-                      Adding...
+                      {currentCartQuantity > 0 ? 'Updating...' : 'Adding...'}
                     </div>
-                  ) : item.stockQuantity === 0 ? 'Out of Stock' : 'Add to Cart'}
+                  ) : item.stockQuantity === 0 ? 'Out of Stock' : 
+                    maxQuantityToAdd === 0 ? 'Max Quantity in Cart' :
+                    currentCartQuantity > 0 ? 'Update Cart' : 'Add to Cart'}
                 </button>
               </div>
 

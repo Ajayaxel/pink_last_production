@@ -1,3 +1,4 @@
+// CartPage.jsx - Updated to navigate to checkout page
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '../store/cart';
@@ -18,7 +19,6 @@ const CartPage = () => {
     clearCart 
   } = useCartStore();
 
-  // Replace mock user ID with actual user ID from localStorage
   const [userId, setUserId] = useState(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
@@ -76,26 +76,49 @@ const CartPage = () => {
     }
   };
 
+  // Updated handleCheckout function
   const handleCheckout = () => {
-    navigate('/payment-details/', {
+    // Validate cart has items
+    if (!cart.items || cart.items.length === 0) {
+      alert('Your cart is empty. Please add items before checkout.');
+      return;
+    }
+  
+    // Validate user authentication
+    if (!userId) {
+      alert('Please log in to continue with checkout.');
+      navigate('/login');
+      return;
+    }
+  
+    // Build cartItems array for checkout
+    const cartItems = cart.items.map(item => {
+      const product = item.productId;
+      const discountedPrice = product.price - (product.price * product.discount) / 100;
+      
+      return {
+        name: product.productName,
+        image: product.images?.[0] 
+          ? buildImageUrl(product.images[0]) 
+          : '/placeholder-image.jpg',
+        price: discountedPrice,
+        quantity: item.quantity,
+        selectedSize: item.selectedSize ? item.selectedSize : null,
+        selectedColor: item.selectedColor ? item.selectedColor : null,
+        sku: product.sku,
+        itemId: item._id
+      };
+    });
+  
+    // Navigate to checkout page instead of payment-details
+    navigate('/checkout', {
       state: {
         userId,
         totalAmount,
-        cartItems: cart.items.map(item => ({
-          name: item.productId?.productName,
-          price: item.productId?.price - (item.productId?.price * item.productId?.discount) / 100,
-          image: item.productId?.images?.[0]
-            ? buildImageUrl(item.productId.images[0])
-            : '/placeholder-image.jpg',
-          size: item.selectedSize || 'N/A',
-          color: item.selectedColor || 'N/A',
-          quantity: item.quantity
-        }))
+        cartItems
       }
     });
-    
   };
-  
 
   if (!userId) {
     return (
@@ -285,7 +308,7 @@ const CartPage = () => {
                   {loading ? 'Processing...' : 'Proceed to Checkout'}
                 </button>
                 <button
-                  onClick={() => navigate('/products')}
+                  onClick={() => navigate('/')}
                   className="w-full mt-3 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-6 rounded-lg font-medium transition-colors"
                 >
                   Continue Shopping

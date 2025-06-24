@@ -15,6 +15,7 @@ const ShopPage = ({ heading = "Shop" }) => {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("");
   
+  
   const buildImageUrl = (imgPath) => {
     if (!imgPath || imgPath.length === 0) return '/placeholder-image.jpg';
     return `https://backend.pinkstories.ae/${imgPath.replace(/^\/+/, '')}`;
@@ -255,11 +256,12 @@ const ShopPage = ({ heading = "Shop" }) => {
                       <span className="text-base sm:text-lg lg:text-xl font-bold text-gray-900">
                         AED {item.price ?? "N/A"}
                       </span>
-                      {item.discount && (
-                        <span className="text-xs sm:text-sm text-gray-400 line-through">
-                          AED {Math.round((item.price || 0) / (1 - item.discount / 100))}
-                        </span>
-                      )}
+                      {item.discount > 0 && item.discount < 100 && (
+                       <span className="text-xs sm:text-sm text-gray-400 line-through">
+                          AED {((item.price || 0) / (1 - item.discount / 100)).toFixed(2)}
+                            </span>
+                        )}
+
                     </div>
                     {/* Star rating - Hidden on mobile for space */}
                     <div className="hidden md:flex items-center space-x-1">

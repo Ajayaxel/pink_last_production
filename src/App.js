@@ -30,19 +30,26 @@ import SarrePage from "./Components/SarrePage";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 
+// Payment components
+import PaymentDetails from './Components/PaymentPage'; // Make sure this path is correct
+import PaymentSuccess from './Components/PaymentSuccess';
+import PaymentFailed from './Components/PaymentFailed';
+import CheckoutPage from "./Components/checkOut/CheckOut";
 
-// In your App.js or router configuration
-import PaymentDetails from './Components/PaymentPage';
-import PaymentSuccess from './Components/PayementSuccess';
-import PaymentFailed from './Components/PayemantFailed';
-
-// Stripe public key from .env
+// Stripe public key
 const stripePromise = loadStripe("pk_test_51RHTx5RtsHUrAvdwQVTqTRbQHul6Y5wePdlMdWH3aZAMzQXFXWFjWLLXU2KIEGsbedapU9vOEmMcWtIxpu9Gi2WC00xVra2QmU");
 
-// Stripe wrapper to wrap only the payment route
-const StripeWrapper = ({ products }) => (
+// Stripe wrapper for PaymentPage (existing one)
+const StripePaymentPageWrapper = ({ products }) => (
   <Elements stripe={stripePromise}>
     <PaymentPage products={products} />
+  </Elements>
+);
+
+// Stripe wrapper for PaymentDetails (new one)
+const StripePaymentDetailsWrapper = () => (
+  <Elements stripe={stripePromise}>
+    <PaymentDetails />
   </Elements>
 );
 
@@ -107,7 +114,13 @@ function App() {
         <Route path="/shop" element={<ShopePage products={list} />} />
         <Route path="/best-seller" element={<BestSellerpage products={list} />} />
         <Route path="/exclusive-collection" element={<ExclusiveColletionpage products={list} />} />
-        <Route path="/payment-details/:id" element={<StripeWrapper products={list} />} />
+        
+        {/* Payment routes - Fixed */}
+        <Route path="/payment-details/:id" element={<StripePaymentPageWrapper products={list} />} />
+        <Route path="/payment-details" element={<StripePaymentDetailsWrapper />} />
+        <Route path="/payment-success" element={<PaymentSuccess />} />
+        <Route path="/payment-failed" element={<PaymentFailed />} />
+        
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterLogin />} />
         <Route path="/semi-party-wears" element={<SemipartyWearPage />} />
@@ -116,11 +129,7 @@ function App() {
         <Route path="/kurta" element={<KurtaPage />} />
         <Route path="/saree" element={<SarrePage />} />
         <Route path="/cart" element={<CartDrawer />} />
-        // Add these routes
-<Route path="/payment-details" element={<PaymentDetails />} />
-<Route path="/payment-success" element={<PaymentSuccess />} />
-<Route path="/payment-failed" element={<PaymentFailed />} />
-
+        <Route path="/checkout" element={<CheckoutPage/>} />
       </Routes>
     </>
   );
