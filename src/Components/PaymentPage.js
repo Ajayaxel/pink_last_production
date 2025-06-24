@@ -6,6 +6,10 @@ const PaymentDetails = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { userId, totalAmount, cartItems = [], deliveryAddress } = location.state || {};
+  console.log(deliveryAddress);
+  console.log(totalAmount);
+  
+  
 
   const stripe = useStripe();
   const elements = useElements();

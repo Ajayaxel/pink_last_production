@@ -35,6 +35,7 @@ import PaymentDetails from './Components/PaymentPage'; // Make sure this path is
 import PaymentSuccess from './Components/PaymentSuccess';
 import PaymentFailed from './Components/PaymentFailed';
 import CheckoutPage from "./Components/checkOut/CheckOut";
+import UserOrders from "./Components/UserOrders";
 
 // Stripe public key
 const stripePromise = loadStripe("pk_test_51RHTx5RtsHUrAvdwQVTqTRbQHul6Y5wePdlMdWH3aZAMzQXFXWFjWLLXU2KIEGsbedapU9vOEmMcWtIxpu9Gi2WC00xVra2QmU");
@@ -130,6 +131,8 @@ function App() {
         <Route path="/saree" element={<SarrePage />} />
         <Route path="/cart" element={<CartDrawer />} />
         <Route path="/checkout" element={<CheckoutPage/>} />
+
+        <Route path="/orders" element={<UserOrders />} />
       </Routes>
     </>
   );
