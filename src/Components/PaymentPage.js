@@ -1,54 +1,88 @@
+import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
-import { useState } from 'react';
 
 const PaymentDetails = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { userId, totalAmount, cartItems = [], deliveryAddress } = location.state || {};
-  console.log(deliveryAddress);
-  console.log(totalAmount);
   
-  
-
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
 
+  // Build image URL helper
+  const buildImageUrl = (imgPath) => {
+    if (!imgPath || imgPath.length === 0) return '/placeholder-image.jpg';
+    const cleanedPath = imgPath.startsWith('/') ? imgPath.slice(1) : imgPath;
+    return `https://backend.pinkstories.ae/${cleanedPath}`;
+  };
+
   // Create order after successful payment
   const createOrder = async (paymentIntentId) => {
+    const orderPayload = {
+      userId,
+      paymentIntentId,
+      items: cartItems.map(item => ({
+        productId: item.id || item._id,
+        name: item.name,
+        image: item.image,
+        price: item.price,
+        quantity: item.quantity,
+        selectedSize: item.selectedSize,
+        selectedColor: item.selectedColor
+      })),
+      totalAmount,
+      deliveryAddress
+    };
+  
+    // Log the request data in JSON format
+    console.log("📦 Order Payload being sent to backend:");
+    console.log(JSON.stringify(orderPayload, null, 2)); // nicely formatted
+  
     try {
       const response = await fetch('http://localhost:7000/api/orders/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId,
-          paymentIntentId,
-          items: cartItems.map(item => ({
-            productId: item.id || item._id,
-            name: item.name,
-            image: item.image,
-            price: item.price,
-            quantity: item.quantity,
-            selectedSize: item.selectedSize,
-            selectedColor: item.selectedColor
-          })),
-          totalAmount,
-          deliveryAddress
-        })
+        body: JSON.stringify(orderPayload)
       });
-
+  
       const data = await response.json();
       if (data.success) {
-        console.log('Order created successfully:', data.order);
+        console.log('✅ Order created successfully:', data.order);
         return data.order;
       } else {
-        console.error('Failed to create order:', data.message);
+        console.error('❌ Failed to create order:', data.message);
         return null;
       }
     } catch (error) {
-      console.error('Error creating order:', error);
+      console.error('🔥 Error creating order:', error);
       return null;
+    }
+  };
+  
+
+  // Update stock quantities after successful payment
+  const updateStockQuantities = async () => {
+    try {
+      const stockUpdateResponse = await fetch('https://backend.pinkstories.ae/api/products/update-quantity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cartItems }),
+      });
+
+      const stockUpdateData = await stockUpdateResponse.json();
+      
+      if (!stockUpdateResponse.ok) {
+        console.error('⚠️ Stock update failed:', stockUpdateData.message);
+        return false;
+      } else {
+        console.log('✅ Stock updated successfully');
+        return true;
+      }
+    } catch (stockErr) {
+      console.error('⚠️ Stock update failed:', stockErr);
+      return false;
     }
   };
 
@@ -76,26 +110,41 @@ const PaymentDetails = () => {
         // Navigate to failure page with error details
         navigate('/payment-failed', {
           state: {
-            error: result.error.message,
+            error: result.error,
+            errorMessage: result.error.message,
             amount: totalAmount,
             userId: userId,
-            cartItems: cartItems
+            cartItems: cartItems,
+            deliveryAddress: deliveryAddress,
+            paymentIntent: { id: 'failed', status: 'failed' }
           }
         });
       } else if (result.paymentIntent.status === 'succeeded') {
         // Create order in the database
         const order = await createOrder(result.paymentIntent.id);
         
-        // Update stock quantity on backend
-        try {
-          await fetch('http://localhost:7000/api/products/update-quantity', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cartItems }),
+        if (!order) {
+          // Handle order creation failure
+          console.error('Failed to create order after successful payment');
+          navigate('/payment-failed', {
+            state: {
+              error: { message: 'Failed to create order after successful payment' },
+              errorMessage: 'Failed to create order after successful payment',
+              amount: totalAmount,
+              userId: userId,
+              cartItems: cartItems,
+              deliveryAddress: deliveryAddress,
+              paymentIntent: result.paymentIntent
+            }
           });
-        } catch (stockErr) {
-          console.error('⚠️ Stock update failed:', stockErr);
-          // You can optionally toast/log this without blocking user
+          return;
+        }
+
+        // Update stock quantity on backend
+        const stockUpdateSuccess = await updateStockQuantities();
+        
+        if (!stockUpdateSuccess) {
+          console.warn('⚠️ Payment successful and order created, but stock update failed');
         }
       
         // Navigate to success page with order details
@@ -105,8 +154,10 @@ const PaymentDetails = () => {
             amount: totalAmount,
             userId: userId,
             cartItems: cartItems,
-            order: order, // Include order details
-            orderId: order?.orderId // Include order ID for easy access
+            order: order,
+            orderId: order?.orderId,
+            stockUpdateSuccess: stockUpdateSuccess,
+            deliveryAddress: deliveryAddress
           }
         });
       }
@@ -116,10 +167,13 @@ const PaymentDetails = () => {
       // Navigate to failure page with generic error
       navigate('/payment-failed', {
         state: {
-          error: 'An unexpected error occurred while processing your payment',
+          error: { message: 'An unexpected error occurred while processing your payment' },
+          errorMessage: 'An unexpected error occurred while processing your payment',
           amount: totalAmount,
           userId: userId,
-          cartItems: cartItems
+          cartItems: cartItems,
+          deliveryAddress: deliveryAddress,
+          paymentIntent: { id: 'error', status: 'error' }
         }
       });
     } finally {
@@ -168,7 +222,7 @@ const PaymentDetails = () => {
               {cartItems.map((item, index) => (
                 <div key={index} className="flex items-center gap-4 p-3 bg-white rounded-lg">
                   <img
-                    src={item.image}
+                    src={buildImageUrl(item.image)}
                     alt={item.name}
                     className="w-16 h-16 object-cover rounded-lg"
                     onError={(e) => {

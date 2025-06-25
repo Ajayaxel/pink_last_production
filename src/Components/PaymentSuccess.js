@@ -1,46 +1,43 @@
 import React from 'react';
-import { CheckCircle, Package, Eye, Home } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { CheckCircle, Package, Eye, Home, MapPin } from 'lucide-react';
 
 const PaymentSuccess = () => {
-  // In a real app, you'd get this from props, location state, or context
-  const mockOrderData = {
-    orderId: 'ORD-123456ABCDE',
-    amount: 299.99,
-    userId: 'user123',
-    paymentIntent: {
-      id: 'pi_1234567890',
-      status: 'succeeded'
-    },
-    cartItems: [
-      {
-        id: '1',
-        name: 'Premium Cotton T-Shirt',
-        image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300&h=300&fit=crop',
-        price: 99.99,
-        quantity: 2,
-        selectedSize: 'M',
-        selectedColor: 'Blue'
-      },
-      {
-        id: '2',
-        name: 'Designer Jeans',
-        image: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=300&h=300&fit=crop',
-        price: 199.99,
-        quantity: 1,
-        selectedSize: '32',
-        selectedColor: 'Dark Blue'
-      }
-    ]
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Get the actual data passed from PaymentDetails component
+  const { 
+    paymentIntent, 
+    amount, 
+    userId, 
+    cartItems = [], 
+    order, 
+    orderId, 
+    stockUpdateSuccess,
+    deliveryAddress 
+  } = location.state || {};
+
+  // Redirect to home if no payment data
+  if (!paymentIntent || !amount) {
+    navigate('/');
+    return null;
+  }
+
+  const buildImageUrl = (imgPath) => {
+    if (!imgPath || imgPath.length === 0) return '/placeholder-image.jpg';
+    const cleanedPath = imgPath.startsWith('/') ? imgPath.slice(1) : imgPath;
+    return `https://backend.pinkstories.ae/${cleanedPath}`;
   };
 
   const handleViewOrders = () => {
-    // In a real app, this would navigate to the orders page
-    window.location.href = '/orders';
+    // Navigate to orders page
+    navigate('/orders');
   };
 
   const handleContinueShopping = () => {
-    // In a real app, this would navigate to the home page
-    window.location.href = '/';
+    // Navigate to home page
+    navigate('/');
   };
 
   return (
@@ -61,43 +58,90 @@ const PaymentSuccess = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-semibold text-gray-900">Order Confirmed</h2>
-                <p className="text-gray-600 mt-1">Order #{mockOrderData.orderId}</p>
+                <p className="text-gray-600 mt-1">Order #{orderId || order?.orderId || 'N/A'}</p>
+                <p className="text-sm text-gray-500 mt-1">Customer ID: {userId}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-gray-600">Total Paid</p>
-                <p className="text-3xl font-bold text-green-600">AED {mockOrderData.amount.toFixed(2)}</p>
+                <p className="text-3xl font-bold text-green-600">AED {parseFloat(amount).toFixed(2)}</p>
               </div>
             </div>
           </div>
 
-          {/* Order Details */}
+          {/* Delivery Address - Enhanced Display */}
+          {deliveryAddress ? (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-blue-600" />
+                Delivery Address
+              </h3>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="font-semibold text-gray-900 text-lg">{deliveryAddress.fullName}</p>
+                    <div className="text-gray-700 mt-2 space-y-1">
+                      <p>{deliveryAddress.addressLine1}</p>
+                      {deliveryAddress.addressLine2 && (
+                        <p>{deliveryAddress.addressLine2}</p>
+                      )}
+                      <p>
+                        {deliveryAddress.city}, {deliveryAddress.state} {deliveryAddress.postalCode}
+                      </p>
+                      <p className="font-medium">{deliveryAddress.country}</p>
+                    </div>
+                  </div>
+                  <div className="text-gray-700">
+                    <p className="font-medium">Contact Information:</p>
+                    <p className="mt-1">📞 {deliveryAddress.phoneNumber}</p>
+                    {deliveryAddress.email && (
+                      <p className="mt-1">📧 {deliveryAddress.email}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-gray-400" />
+                Delivery Address
+              </h3>
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <p className="text-gray-500 italic">No delivery address provided</p>
+              </div>
+            </div>
+          )}
+
+          {/* Order Items */}
           <div className="mb-6">
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <Package className="w-5 h-5" />
-              Order Items
+              Order Items ({cartItems.length} item{cartItems.length !== 1 ? 's' : ''})
             </h3>
             <div className="space-y-4">
-              {mockOrderData.cartItems.map((item, index) => (
+              {cartItems.map((item, index) => (
                 <div key={index} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
                   <img
-                    src={item.image}
-                    alt={item.name}
+                    src={buildImageUrl(item.image)}
+                    alt={item.name || 'Product'}
                     className="w-16 h-16 object-cover rounded-lg"
                     onError={(e) => {
                       e.target.src = '/placeholder-image.jpg';
                     }}
                   />
                   <div className="flex-grow">
-                    <h4 className="font-medium text-gray-900">{item.name}</h4>
+                    <h4 className="font-medium text-gray-900">{item.name || 'Product'}</h4>
                     <div className="text-sm text-gray-600">
                       {item.selectedSize && <span>Size: {item.selectedSize}</span>}
                       {item.selectedColor && <span className="ml-3">Color: {item.selectedColor}</span>}
                     </div>
-                    <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                    <p className="text-sm text-gray-600">Quantity: {item.quantity || 1}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium text-gray-900">AED {(item.price * item.quantity).toFixed(2)}</p>
-                    <p className="text-sm text-gray-600">AED {item.price.toFixed(2)} each</p>
+                    <p className="font-medium text-gray-900">
+                      AED {((item.price || 0) * (item.quantity || 1)).toFixed(2)}
+                    </p>
+                    <p className="text-sm text-gray-600">AED {(item.price || 0).toFixed(2)} each</p>
                   </div>
                 </div>
               ))}
@@ -108,9 +152,16 @@ const PaymentSuccess = () => {
           <div className="bg-green-50 rounded-lg p-4 mb-6">
             <h4 className="font-semibold text-green-800 mb-2">Payment Information</h4>
             <div className="text-sm text-green-700 space-y-1">
-              <p><span className="font-medium">Payment ID:</span> {mockOrderData.paymentIntent.id}</p>
-              <p><span className="font-medium">Status:</span> {mockOrderData.paymentIntent.status}</p>
+              <p><span className="font-medium">Payment ID:</span> {paymentIntent.id}</p>
+              <p><span className="font-medium">Status:</span> {paymentIntent.status}</p>
               <p><span className="font-medium">Date:</span> {new Date().toLocaleDateString()}</p>
+              {stockUpdateSuccess !== undefined && (
+                <p><span className="font-medium">Inventory Status:</span> 
+                  <span className={stockUpdateSuccess ? 'text-green-600' : 'text-yellow-600'}>
+                    {stockUpdateSuccess ? ' ✅ Updated' : ' ⚠️ Pending Update'}
+                  </span>
+                </p>
+              )}
             </div>
           </div>
 
@@ -122,6 +173,9 @@ const PaymentSuccess = () => {
               <li>• We'll notify you when your order ships</li>
               <li>• Track your order anytime in the Orders section</li>
               <li>• Estimated delivery: 3-5 business days</li>
+              {deliveryAddress && (
+                <li>• Your order will be delivered to {deliveryAddress.city}, {deliveryAddress.state}</li>
+              )}
             </ul>
           </div>
         </div>
