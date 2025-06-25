@@ -144,7 +144,7 @@ const Header = ({ cart, setIsCartOpen }) => {
           </div>
 
           <FiBookmark className="cursor-pointer hover:text-[#c49a6c] transition-colors duration-200" />
-          <h2 className="cursor-pointer text-sm font-medium hover:text-[#c49a6c] transition-colors duration-200">ACCOUNT</h2>
+         
           <h3
             onClick={() => navigate('/cart')}
             className="cursor-pointer text-sm font-medium hover:text-[#c49a6c] transition-colors duration-200"

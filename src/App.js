@@ -25,6 +25,7 @@ import CoSetsPage from "./Components/CoSetsPage";
 import IndoOutfits from "./Components/IndoOutfits";
 import KurtaPage from "./Components/KurtaPage";
 import SarrePage from "./Components/SarrePage";
+import ProfilePage from "./Components/ProfilePage";
 
 // Stripe
 import { Elements } from "@stripe/react-stripe-js";
@@ -87,8 +88,10 @@ function App() {
 
   return (
     <>
-      {/* Hide Header & Navbar on login/register */}
-      {location.pathname !== "/login" && location.pathname !== "/register" && (
+      {/* Hide Header & Navbar on login/register/profile pages */}
+      {location.pathname !== "/login" && 
+       location.pathname !== "/register" && 
+       location.pathname !== "/profile" && (
         <>
           <Header cart={cart} setIsCartOpen={setIsCartOpen} />
           <Navbar />
@@ -113,6 +116,7 @@ function App() {
         <Route path="/party-wears" element={<PartyWearsPage products={list} />} />
         <Route path="/shop" element={<ShopePage products={list} />} />
         <Route path="/best-seller" element={<BestSellerpage products={list} />} />
+        
         <Route path="/exclusive-collection" element={<ExclusiveColletionpage products={list} />} />
         
         {/* Payment routes - Fixed */}
@@ -120,6 +124,7 @@ function App() {
         <Route path="/payment-details" element={<StripePaymentDetailsWrapper />} />
         <Route path="/payment-success" element={<PaymentSuccess />} />
         <Route path="/payment-failed" element={<PaymentFailed />} />
+        <Route path="/profile" element={<ProfilePage />} />
         
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterLogin />} />
