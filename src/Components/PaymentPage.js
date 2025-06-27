@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
+import {BASE_URL} from '../api/apiService'; 
+
 
 const PaymentDetails = () => {
   const location = useLocation();
@@ -11,20 +13,50 @@ const PaymentDetails = () => {
   const elements = useElements();
   const [loading, setLoading] = useState(false);
 
-  // Build image URL helper
+  // Build image URL helper - SAME AS CHECKOUT
   const buildImageUrl = (imgPath) => {
     if (!imgPath || imgPath.length === 0) return '/placeholder-image.jpg';
+    
+    // If it's already a full URL, return as is
+    if (imgPath.startsWith('http://') || imgPath.startsWith('https://')) {
+      return imgPath;
+    }
+    
+    // If it's a relative path, build the full URL
     const cleanedPath = imgPath.startsWith('/') ? imgPath.slice(1) : imgPath;
     return `https://backend.pinkstories.ae/${cleanedPath}`;
   };
 
-  // Create order after successful payment
-  const createOrder = async (paymentIntentId) => {
+  // Generate random order ID - SAME AS CHECKOUT
+  const generateOrderId = () => {
+    const timestamp = Date.now().toString();
+    const randomNum = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    return `ORD-${timestamp}-${randomNum}`;
+  };
+
+  // Calculate shipping - SAME AS CHECKOUT
+  const calculateShipping = () => {
+    // Add your shipping calculation logic here
+    return totalAmount > 200 ? 0 : 25; // Free shipping over AED 200
+  };
+
+  // Create order function - EXACTLY SAME AS CHECKOUT
+  const createOrder = async (deliveryAddress) => {
+    const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const shippingCost = calculateShipping();
+    const tax = 0;
+    const total = subtotal + shippingCost + tax;
+
+    const token = localStorage.getItem('token'); // Assumes JWT stored here
+
+    // Generate random order ID
+    const orderId = generateOrderId();
+
     const orderPayload = {
-      userId,
-      paymentIntentId,
-      items: cartItems.map(item => ({
-        productId: item.id || item._id,
+      orderId: orderId,
+      userId: userId,
+      productDetails: cartItems.map(item => ({
+        productId: item._id || item.id,
         name: item.name,
         image: item.image,
         price: item.price,
@@ -32,40 +64,65 @@ const PaymentDetails = () => {
         selectedSize: item.selectedSize,
         selectedColor: item.selectedColor
       })),
-      totalAmount,
-      deliveryAddress
+      deliveryAddress: {
+        fullName: deliveryAddress.fullName,
+        phoneNumber: deliveryAddress.phoneNumber,
+        addressLine1: deliveryAddress.addressLine1,
+        addressLine2: deliveryAddress.addressLine2,
+        city: deliveryAddress.city,
+        state: deliveryAddress.state,
+        postalCode: deliveryAddress.postalCode,
+        country: deliveryAddress.country
+      },
+      total: total,
+      status: 'pending', // Initial status - SAME AS CHECKOUT
+      paymentStatus: 'pending' // SAME AS CHECKOUT
     };
-  
+
     // Log the request data in JSON format
     console.log("📦 Order Payload being sent to backend:");
     console.log(JSON.stringify(orderPayload, null, 2)); // nicely formatted
-  
+
     try {
-      const response = await fetch('http://localhost:7000/api/orders/create-order', {
+      const response = await fetch(`${BASE_URL}orders`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`, // <-- Add this line
+        },
         body: JSON.stringify(orderPayload)
       });
-  
+      
+
       const data = await response.json();
-      if (data.success) {
-        console.log('✅ Order created successfully:', data.order);
-        return data.order;
+      
+      console.log("🔍 Full backend response:", data); // Debug log
+      
+      if (response.ok && data.success) {
+        // Handle different possible response formats - SAME AS CHECKOUT
+        const orderData = data.order || data.data || data;
+        console.log('✅ Order created successfully:', orderData);
+        
+        // Return the order data with fallback to payload data
+        return orderData || { 
+          ...orderPayload, 
+          _id: data._id || orderId,
+          createdAt: new Date().toISOString() 
+        };
       } else {
-        console.error('❌ Failed to create order:', data.message);
-        return null;
+        console.error('❌ Failed to create order:', data.message || 'Unknown error');
+        throw new Error(data.message || 'Failed to create order');
       }
     } catch (error) {
       console.error('🔥 Error creating order:', error);
-      return null;
+      throw error;
     }
   };
-  
 
-  // Update stock quantities after successful payment
+  // Update stock quantities - SAME AS CHECKOUT
   const updateStockQuantities = async () => {
     try {
-      const stockUpdateResponse = await fetch('https://backend.pinkstories.ae/api/products/update-quantity', {
+      const stockUpdateResponse = await fetch(`${BASE_URL}products/update-quantity`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cartItems }),
@@ -120,16 +177,23 @@ const PaymentDetails = () => {
           }
         });
       } else if (result.paymentIntent.status === 'succeeded') {
-        // Create order in the database
-        const order = await createOrder(result.paymentIntent.id);
-        
-        if (!order) {
-          // Handle order creation failure
-          console.error('Failed to create order after successful payment');
+        console.log('🚀 Payment successful, creating order...');
+
+        // Create order in the database - USING SAME FUNCTION AS CHECKOUT
+        let order;
+        try {
+          order = await createOrder(deliveryAddress);
+          console.log('📋 Order creation result:', order);
+
+          if (!order) {
+            throw new Error('Order creation returned empty result');
+          }
+        } catch (orderError) {
+          console.error('❌ Failed to create order after successful payment:', orderError);
           navigate('/payment-failed', {
             state: {
-              error: { message: 'Failed to create order after successful payment' },
-              errorMessage: 'Failed to create order after successful payment',
+              error: { message: `Failed to create order: ${orderError.message}` },
+              errorMessage: `Failed to create order: ${orderError.message}`,
               amount: totalAmount,
               userId: userId,
               cartItems: cartItems,
@@ -141,11 +205,14 @@ const PaymentDetails = () => {
         }
 
         // Update stock quantity on backend
+        console.log('📦 Updating stock quantities...');
         const stockUpdateSuccess = await updateStockQuantities();
         
         if (!stockUpdateSuccess) {
           console.warn('⚠️ Payment successful and order created, but stock update failed');
         }
+
+        console.log('✅ Order process completed successfully');
       
         // Navigate to success page with order details
         navigate('/payment-success', {
@@ -155,7 +222,7 @@ const PaymentDetails = () => {
             userId: userId,
             cartItems: cartItems,
             order: order,
-            orderId: order?.orderId,
+            orderId: order?.orderId || order?._id,
             stockUpdateSuccess: stockUpdateSuccess,
             deliveryAddress: deliveryAddress
           }
@@ -163,7 +230,7 @@ const PaymentDetails = () => {
       }
       
     } catch (err) {
-      console.error(err);
+      console.error('🔥 Payment processing error:', err);
       // Navigate to failure page with generic error
       navigate('/payment-failed', {
         state: {
@@ -180,6 +247,10 @@ const PaymentDetails = () => {
       setLoading(false);
     }
   };
+
+  // Calculate final totals - SAME AS CHECKOUT
+  const shippingCost = calculateShipping();
+  const finalTotal = totalAmount + shippingCost;
 
   // Redirect to home if no payment data
   if (!totalAmount || !userId) {
@@ -244,6 +315,26 @@ const PaymentDetails = () => {
               ))}
             </div>
           )}
+
+          {/* Price Breakdown - SAME AS CHECKOUT */}
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Subtotal</span>
+                <span className="font-medium">AED {totalAmount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Shipping</span>
+                <span className="font-medium">
+                  {shippingCost === 0 ? 'Free' : `AED ${shippingCost.toFixed(2)}`}
+                </span>
+              </div>
+              <div className="flex justify-between font-bold text-lg border-t pt-2">
+                <span>Total</span>
+                <span className="text-green-600">AED {finalTotal.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -266,10 +357,6 @@ const PaymentDetails = () => {
         />
       </div>
 
-      <div className="text-right mt-6">
-        <h2 className="text-2xl font-bold text-green-600">Total: AED {totalAmount}</h2>
-      </div>
-
       <div className="mt-8 text-center space-x-4">
         <button
           onClick={() => navigate(-1)}
@@ -282,7 +369,7 @@ const PaymentDetails = () => {
           disabled={!stripe || loading}
           className="bg-blue-600 text-white px-6 py-3 rounded-full text-lg hover:bg-blue-700 transition disabled:opacity-50"
         >
-          {loading ? 'Processing...' : `Pay AED ${totalAmount}`}
+          {loading ? 'Processing...' : `Pay AED ${finalTotal.toFixed(2)}`}
         </button>
       </div>
     </div>

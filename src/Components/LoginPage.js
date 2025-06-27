@@ -7,6 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 function LoginPage() {
     const [emailId, setEmailId] = useState("");
     const [password, setPassword] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
     const showToast = (message, type = "error") => {
@@ -26,22 +27,38 @@ function LoginPage() {
             return;
         }
 
+        // Basic email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(emailId)) {
+            showToast("Please enter a valid email address.");
+            return;
+        }
+
+        setIsLoading(true);
+
         try {
+            // Use BASE_URL instead of hardcoded localhost
             const response = await fetch(`${BASE_URL}auth/login`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ emailId, password }),
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                body: JSON.stringify({ 
+                    emailId: emailId.trim().toLowerCase(), // Normalize email
+                    password: password 
+                }),
             });
 
             const data = await response.json();
+            console.log('Login response:', data); // Debug log
 
             if (!response.ok) {
-                if (data.message?.toLowerCase().includes("not found")) {
-                    showToast("User not found.");
-                } else if (data.message?.toLowerCase().includes("incorrect")) {
-                    showToast("Incorrect email or password.");
+                if (data.message?.toLowerCase().includes("not found") || 
+                    data.message?.toLowerCase().includes("invalid")) {
+                    showToast("Invalid email or password.");
                 } else {
-                    showToast(data.message || "Login failed.");
+                    showToast(data.message || data.error || "Login failed.");
                 }
                 return;
             }
@@ -58,7 +75,7 @@ function LoginPage() {
 
             // Store new authentication data
             localStorage.setItem("token", data.token);
-            localStorage.setItem("userId", data.user.id); // Use the actual user ID from response
+            localStorage.setItem("userId", data.user.id);
             localStorage.setItem("userEmail", data.user.emailId);
             localStorage.setItem("userRole", data.user.role);
             localStorage.setItem("isAuthenticated", "true");
@@ -66,6 +83,7 @@ function LoginPage() {
             // Store complete user data for easy access
             const userData = {
                 id: data.user.id,
+                name: data.user.name,
                 emailId: data.user.emailId,
                 role: data.user.role,
                 token: data.token,
@@ -78,10 +96,16 @@ function LoginPage() {
                 detail: userData 
             }));
             
-            navigate("/"); // Redirect to protected route
+            // Small delay to show success message before redirect
+            setTimeout(() => {
+                navigate("/");
+            }, 1000);
+            
         } catch (error) {
-            showToast("An unexpected error occurred.");
-            console.error("Login error:", error.message);
+            console.error("Login error:", error);
+            showToast("Network error. Please check your connection and try again.");
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -115,7 +139,8 @@ function LoginPage() {
                         value={emailId}
                         onChange={(e) => setEmailId(e.target.value)}
                         className="w-full px-4 py-2 border bg-gray-100 rounded mt-1 focus:outline-none hover:border-[#C29256] hover:shadow-lg transition-all"
-                        onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+                        onKeyPress={(e) => e.key === 'Enter' && !isLoading && handleLogin()}
+                        disabled={isLoading}
                     />
                 </div>
 
@@ -127,7 +152,8 @@ function LoginPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         className="w-full px-4 py-2 border bg-gray-100 rounded mt-1 focus:outline-none hover:border-[#C29256] hover:shadow-lg transition-all"
-                        onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+                        onKeyPress={(e) => e.key === 'Enter' && !isLoading && handleLogin()}
+                        disabled={isLoading}
                     />
                 </div>
 
@@ -142,9 +168,9 @@ function LoginPage() {
                 <button
                     className="w-full max-w-md bg-[#C29256] text-white py-2 rounded mt-6 hover:bg-[#C5892F] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={handleLogin}
-                    disabled={!emailId || !password}
+                    disabled={!emailId || !password || isLoading}
                 >
-                    Login
+                    {isLoading ? "Signing In..." : "Login"}
                 </button>
 
                 <div className="flex items-center my-4 w-full max-w-md">

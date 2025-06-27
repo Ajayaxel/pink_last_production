@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import {BASE_URL} from '../api/apiService'; 
+// Adjust the import based on your project structure
 
 const OrderDetails = () => {
   const { id } = useParams();
@@ -30,7 +32,7 @@ const OrderDetails = () => {
   const fetchOrderDetails = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:7000/api/orders/${id}`, {
+      const response = await fetch(`${BASE_URL}orders/user/${id}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -55,7 +57,7 @@ const OrderDetails = () => {
     if (!window.confirm('Are you sure you want to cancel this order?')) return;
 
     try {
-      const response = await fetch(`http://localhost:7000/api/orders/${id}/cancel`, {
+      const response = await fetch(`${BASE_URL}orders/${id}/cancel`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -81,7 +83,7 @@ const OrderDetails = () => {
     if (!reason) return;
 
     try {
-      const response = await fetch(`http://localhost:7000/api/orders/${id}/return`, {
+      const response = await fetch(`${BASE_URL}orders/${id}/return`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { BASE_URL } from "../api/apiService";
+import {BASE_URL} from '../api/apiService'; 
 
 const RegisterLogin = () => {
   const navigate = useNavigate();
@@ -68,7 +68,7 @@ const RegisterLogin = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.open("http://localhost:7000/api/auth/google", "_self");
+    window.open(`${BASE_URL}auth/google`, "_self");
   };
 
   return (

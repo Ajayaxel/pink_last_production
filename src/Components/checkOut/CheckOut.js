@@ -1,7 +1,9 @@
-// CheckoutPage.jsx - Enhanced checkout with address management and fixed image handling
+// CheckoutPage.jsx - Checkout without order creation (moved to payment page)
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, Plus, Edit, Trash2, CreditCard, Truck } from 'lucide-react';
+import {BASE_URL} from '../../api/apiService'; 
+
 
 const CheckoutPage = () => {
   const location = useLocation();
@@ -57,7 +59,7 @@ const CheckoutPage = () => {
   const fetchAddresses = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:7000/api/addresses/${userId}`);
+      const response = await fetch(`${BASE_URL}addresses/${userId}`);
       const data = await response.json();
       
       if (response.ok) {
@@ -84,7 +86,7 @@ const CheckoutPage = () => {
     e.preventDefault();
     try {
       setSubmitting(true);
-      const response = await fetch('http://localhost:7000/api/addresses', {
+      const response = await fetch(`${BASE_URL}addresses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -127,7 +129,7 @@ const CheckoutPage = () => {
     e.preventDefault();
     try {
       setSubmitting(true);
-      const response = await fetch(`http://localhost:7000/api/addresses/${editingAddress._id}`, {
+      const response = await fetch(`${BASE_URL}addresses/${editingAddress._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -171,7 +173,7 @@ const CheckoutPage = () => {
     if (!window.confirm('Are you sure you want to delete this address?')) return;
     
     try {
-      const response = await fetch(`http://localhost:7000/api/addresses/${addressId}`, {
+      const response = await fetch(`${BASE_URL}addresses/${addressId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -210,6 +212,18 @@ const CheckoutPage = () => {
     setEditingAddress(address);
   };
 
+  // Calculate shipping function
+  const calculateShipping = () => {
+    // Add your shipping calculation logic here
+    return totalAmount > 200 ? 0 : 25; // Free shipping over AED 200
+  };
+
+  const calculateFinalTotal = () => {
+    const shippingCost = calculateShipping();
+    return totalAmount + shippingCost;
+  };
+
+  // Updated proceed to payment - simplified without order creation
   const handleProceedToPayment = () => {
     if (!selectedAddress) {
       setError('Please select a delivery address');
@@ -218,23 +232,26 @@ const CheckoutPage = () => {
 
     const selectedAddr = addresses.find(addr => addr._id === selectedAddress);
     
+    if (!selectedAddr) {
+      setError('Invalid delivery address selected');
+      return;
+    }
+
+    console.log('✅ Proceeding to payment with address:', selectedAddr);
+
+    // Navigate to payment with checkout details
     navigate('/payment-details', {
       state: {
         userId,
-        totalAmount,
+        totalAmount: calculateFinalTotal(),
         cartItems,
         deliveryAddress: selectedAddr
       }
     });
   };
 
-  const calculateShipping = () => {
-    // Add your shipping calculation logic here
-    return totalAmount > 200 ? 0 : 25; // Free shipping over AED 200
-  };
-
   const shippingCost = calculateShipping();
-  const finalTotal = totalAmount + shippingCost;
+  const finalTotal = calculateFinalTotal();
 
   if (loading) {
     return (
