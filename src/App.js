@@ -39,7 +39,7 @@ import CheckoutPage from "./Components/checkOut/CheckOut";
 import UserOrders from "./Components/UserOrders";
 
 // Stripe public key
-const stripePromise = loadStripe("pk_test_51RHTx5RtsHUrAvdwQVTqTRbQHul6Y5wePdlMdWH3aZAMzQXFXWFjWLLXU2KIEGsbedapU9vOEmMcWtIxpu9Gi2WC00xVra2QmU");
+const stripePromise = loadStripe("pk_live_51RHTx5RtsHUrAvdwyGBThckWvnaVTm9cQ2iCRenP7o7ysTkTjiPB1C8GhpBdEtlZfovV94mEi9s2HcmXpxtppJR800Kn3vXXb9");
 
 // Stripe wrapper for PaymentPage (existing one)
 const StripePaymentPageWrapper = ({ products }) => (
