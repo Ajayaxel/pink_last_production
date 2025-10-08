@@ -87,7 +87,7 @@ const RegisterLogin = () => {
         {/* Left Side Image */}
         <div className="hidden md:block md:w-1/2 lg:w-3/5 bg-black relative h-full">
           <img
-            src="/loginpageimg.png"
+            src="/P (39)-min.jpg"
             alt="Fashion"
             className="absolute inset-0 w-full h-full object-cover"
           />

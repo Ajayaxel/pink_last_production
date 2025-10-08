@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { FiBookmark, FiX, FiChevronDown, FiFilter, FiStar } from "react-icons/fi";
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import FooterSection from "./FotterSection";
+
 
 const CoSetsPage = () => {
   const navigate = useNavigate();
@@ -527,6 +529,7 @@ const CoSetsPage = () => {
           )}
         </div>
       </div>
+
     </div>
   );
 };

@@ -29,8 +29,9 @@ const FotterSection = () => {
           {/* Right section */}
           <div className="w-full md:w-1/3 text-center md:text-right mb-6 md:mb-0">
             <div className="text-sm md:text-base">
-              <p>Behind Sharjah University - Muwaileh</p>
-              <p>Commercial - Industrial Area</p>
+              <p>PINKStories, Second Floor, Lulu Hypermarket</p>
+            <p>Sheikh Khalifa Bin Zayed Al Nahyan Road</p>
+            <p>Muwaileh Commercial, Industrial Area</p>
               <p>Sharjah - United Arab Emirates</p>
             </div>
             

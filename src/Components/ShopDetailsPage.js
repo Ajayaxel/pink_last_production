@@ -11,6 +11,7 @@ const ProductDetailsPage = () => {
   const { addToCart, loading: cartLoading, cart, fetchCart } = useCartStore();
 
   const [item, setItem] = useState(null);
+  const [isLoading, setIsLoading] = useState(true); // Add explicit loading state
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState(null);
   const [selectedColor, setSelectedColor] = useState(null);
@@ -63,13 +64,36 @@ const ProductDetailsPage = () => {
   // Load item and fetch cart when user is authenticated
   useEffect(() => {
     const loadProduct = async () => {
-      if (!products || products.length === 0) await fetchProducts();
+      try {
+        setIsLoading(true);
+        
+        // Always fetch products if array is empty or if we can't find the product
+        if (!products || products.length === 0) {
+          await fetchProducts();
+        }
+        
+        // After fetching, try to find the product
+        // Note: We need to access the updated products from the store
+        // The products variable might still be stale, so we should handle this
+        
+      } catch (error) {
+        console.error("Error loading product:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadProduct();
+  }, [id, fetchProducts]); // Remove products from dependencies to avoid stale closure
+
+  // Separate effect to set item when products are loaded
+  useEffect(() => {
+    if (products && products.length > 0) {
       const found = products.find((p) => p._id === id);
       setItem(found);
-    
-    };
-    loadProduct();
-  }, [id, products]);
+      setIsLoading(false);
+    }
+  }, [products, id]);
 
   // Fetch cart when user is authenticated
   useEffect(() => {
@@ -100,14 +124,11 @@ const ProductDetailsPage = () => {
     const indianSizes = item.sizeVariants.indian || [];
     const pakistanSizes = item.sizeVariants.pakistan || [];
     
-    // For demo purposes, if arrays are empty, add some sample sizes
-    const demoIndianSizes = indianSizes.length > 0 ? indianSizes : ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
-    const demoPakistanSizes = pakistanSizes.length > 0 ? pakistanSizes : ['Small', 'Medium', 'Large', 'Extra Large'];
-    
+  
     return {
-      indian: demoIndianSizes,
-      pakistan: demoPakistanSizes,
-      hasSizes: demoIndianSizes.length > 0 || demoPakistanSizes.length > 0
+      indian: indianSizes,
+      pakistan: pakistanSizes,
+      hasSizes:indianSizes.length > 0 || pakistanSizes.length > 0
     };
   };
 
@@ -248,6 +269,7 @@ const ProductDetailsPage = () => {
       }
     });
   };
+  
   const buildImageUrl = (imgPath) => {
     if (!imgPath || imgPath.length === 0) return '/placeholder-image.jpg';
     const cleanedPath = imgPath.startsWith('/') ? imgPath.slice(1) : imgPath;
@@ -266,12 +288,23 @@ const ProductDetailsPage = () => {
     return Math.max(0, item.stockQuantity - currentCartQuantity);
   };
 
-  if (!item) {
+  // Show loading state while fetching or if product not found
+  if (isLoading || !item) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mx-auto mb-4"></div>
-          <h1 className="text-2xl font-semibold text-gray-700">Loading product...</h1>
+          <h1 className="text-2xl font-semibold text-gray-700">
+            {isLoading ? 'Loading product...' : 'Product not found'}
+          </h1>
+          {!isLoading && !item && (
+            <button 
+              onClick={() => navigate('/')}
+              className="mt-4 px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors"
+            >
+              Go Back to Home
+            </button>
+          )}
         </div>
       </div>
     );
@@ -300,27 +333,6 @@ const ProductDetailsPage = () => {
         </div>
       )}
 
-      {/* Authentication Status Bar */}
-      <div className="bg-gray-100 py-2 px-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center text-sm">
-          <div>
-            {isAuthenticated && user ? (
-              <span className="text-green-600">
-                Welcome, {user.emailId}
-              </span>
-            ) : (
-              <span className="text-gray-600">
-                <button 
-                  onClick={() => navigate('/login')}
-                  className="text-blue-600 hover:text-blue-700 underline"
-                >
-                  Login
-                </button> to add items to cart
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">

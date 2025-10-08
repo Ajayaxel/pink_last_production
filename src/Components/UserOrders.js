@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Package, Calendar, DollarSign, Eye, Truck, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom'; // Add this import
 import {BASE_URL} from '../api/apiService'; 
-
+import FooterSection from "./FotterSection";
 
 const UserOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -9,30 +10,82 @@ const UserOrders = () => {
   const [error, setError] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const navigate = useNavigate(); // Add navigate hook
   
-  // Mock userId - replace with actual user ID from your auth system
-  const userId = "68472074f790d13ca3d4c5d3";
+  // Get userId from localStorage
+  const getUserId = () => {
+    // Try multiple possible keys based on your login implementation
+    const userId = localStorage.getItem('userId');
+    const userData = localStorage.getItem('userData');
+    
+    if (userId) {
+      return userId;
+    }
+    
+    if (userData) {
+      try {
+        const parsedUserData = JSON.parse(userData);
+        return parsedUserData.id;
+      } catch (error) {
+        console.error('Error parsing userData from localStorage:', error);
+      }
+    }
+    
+    return null;
+  };
 
+  // Check authentication on component mount
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    const userId = getUserId();
+    const isAuthenticated = localStorage.getItem('isAuthenticated');
+    
+    if (!userId || !isAuthenticated) {
+      // Redirect to login if not authenticated
+      navigate('/login');
+      return;
+    }
+    
+    fetchOrders(userId);
+  }, [navigate]);
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (userId) => {
+    if (!userId) {
+      setError('User not authenticated. Please login again.');
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
-      const response = await fetch(`${BASE_URL}orders/user/${userId}`);
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${BASE_URL}orders/user/${userId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`, // Add authorization header if required
+        },
+      });
+      
       const data = await response.json();
       
       if (response.ok && data.success) {
         // Handle both single order and array of orders
         const ordersArray = Array.isArray(data.data) ? data.data : [data.data];
         setOrders(ordersArray);
+        setError(''); // Clear any previous errors
       } else {
+        if (response.status === 401) {
+          // Token expired or invalid
+          localStorage.clear();
+          navigate('/login');
+          return;
+        }
         setError(data.message || 'Failed to fetch orders');
       }
     } catch (error) {
       console.error('Error fetching orders:', error);
-      setError('Failed to load order history');
+      setError('Failed to load order history. Please check your connection.');
     } finally {
       setLoading(false);
     }
@@ -101,6 +154,13 @@ const UserOrders = () => {
     setSelectedOrder(null);
   };
 
+  const handleRetry = () => {
+    const userId = getUserId();
+    if (userId) {
+      fetchOrders(userId);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -129,12 +189,20 @@ const UserOrders = () => {
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
             <p className="text-red-700">{error}</p>
-            <button
-              onClick={() => setError('')}
-              className="text-red-600 hover:text-red-800 text-sm mt-2"
-            >
-              Dismiss
-            </button>
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={handleRetry}
+                className="text-red-600 hover:text-red-800 text-sm font-medium"
+              >
+                Retry
+              </button>
+              <button
+                onClick={() => setError('')}
+                className="text-red-600 hover:text-red-800 text-sm"
+              >
+                Dismiss
+              </button>
+            </div>
           </div>
         )}
 
@@ -321,6 +389,7 @@ const UserOrders = () => {
           </div>
         )}
       </div>
+      <FooterSection />
     </div>
   );
 };

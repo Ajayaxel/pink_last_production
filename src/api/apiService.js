@@ -162,7 +162,7 @@ import axios from 'axios';
 
 // Create an Axios instance with a base URL
 
-export const BASE_URL = "http://localhost:7000/api/";  //https://backend.pinkstories.ae/api/
+export const BASE_URL = "https://backend.pinkstories.ae/api/";  //https://backend.pinkstories.ae/api/
 
 const api = axios.create({
     baseURL: BASE_URL, // Change this if your API base changes

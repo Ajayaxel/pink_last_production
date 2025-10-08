@@ -121,7 +121,7 @@ function LoginPage() {
             </button>
 
             <div className="md:w-[50%] lg:w-[60%] bg-black hidden md:block relative h-full overflow-hidden">
-                <img src="/loginpageimg.png" alt="Fashion" className="absolute inset-0 w-full h-full object-cover" />
+                <img src="/P (39)-min.jpg" alt="Fashion" className="absolute inset-0 w-full h-full object-cover" />
             </div>
 
             <div className="w-full md:w-[50%] lg:w-[40%] flex flex-col justify-center items-center px-6 sm:px-8 md:px-12 lg:px-16 h-full">

@@ -1,8 +1,10 @@
-// CartPage.jsx - Updated to navigate to checkout page
+// CartPage.jsx - Updated with authentication check on refresh
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '../store/cart';
-import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, LogIn } from 'lucide-react';
+import FooterSection from "./FotterSection";
+
 
 const CartPage = () => {
   const navigate = useNavigate();
@@ -21,29 +23,42 @@ const CartPage = () => {
 
   const [userId, setUserId] = useState(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    const isAuth = localStorage.getItem("isAuthenticated") === "true";
-    const userData = localStorage.getItem("userData");
+    const checkAuthentication = () => {
+      const isAuth = localStorage.getItem("isAuthenticated") === "true";
+      const userData = localStorage.getItem("userData");
 
-    if (isAuth && userData) {
-      try {
-        const user = JSON.parse(userData);
-        if (user?.id) {
-          setUserId(user.id);
+      if (isAuth && userData) {
+        try {
+          const user = JSON.parse(userData);
+          if (user?.id) {
+            setUserId(user.id);
+            setIsAuthenticated(true);
+          } else {
+            setIsAuthenticated(false);
+          }
+        } catch (err) {
+          console.error("Failed to parse userData:", err);
+          setIsAuthenticated(false);
         }
-      } catch (err) {
-        console.error("Failed to parse userData:", err);
+      } else {
+        setIsAuthenticated(false);
       }
-    }
+      setAuthChecked(true);
+    };
+
+    checkAuthentication();
   }, []);
 
   useEffect(() => {
-    if (userId) {
+    if (userId && isAuthenticated) {
       console.log("Calling fetchCart for user:", userId);
       fetchCart(userId);
     }
-  }, [fetchCart, userId]);
+  }, [fetchCart, userId, isAuthenticated]);
 
   const buildImageUrl = (imgPath) => {
     if (!imgPath || imgPath.length === 0) return '/placeholder-image.jpg';
@@ -76,7 +91,6 @@ const CartPage = () => {
     }
   };
 
-  // Updated handleCheckout function
   const handleCheckout = () => {
     // Validate cart has items
     if (!cart.items || cart.items.length === 0) {
@@ -110,7 +124,7 @@ const CartPage = () => {
       };
     });
   
-    // Navigate to checkout page instead of payment-details
+    // Navigate to checkout page
     navigate('/checkout', {
       state: {
         userId,
@@ -120,10 +134,43 @@ const CartPage = () => {
     });
   };
 
-  if (!userId) {
+  // Show loading while checking authentication
+  if (!authChecked) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-lg text-gray-600">Loading user info...</p>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mx-auto mb-4"></div>
+          <p className="text-lg text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login prompt if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+          <LogIn size={64} className="mx-auto text-gray-400 mb-4" />
+          <h2 className="text-2xl font-semibold text-gray-700 mb-2">Login Required</h2>
+          <p className="text-gray-600 mb-6">
+            You need to be logged in to view your shopping cart. Please log in to continue.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={() => navigate('/login')}
+              className="bg-pink-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-pink-600 transition-colors"
+            >
+              Go to Login
+            </button>
+            <button
+              onClick={() => navigate('/')}
+              className="bg-gray-100 text-gray-800 px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+            >
+              Back to Home
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -189,7 +236,7 @@ const CartPage = () => {
             <h2 className="text-2xl font-semibold text-gray-700 mb-2">Your cart is empty</h2>
             <p className="text-gray-600 mb-6">Add some products to get started!</p>
             <button
-              onClick={() => navigate('/products')}
+              onClick={() => navigate('/shop')}
               className="bg-pink-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-pink-600 transition-colors"
             >
               Continue Shopping
@@ -344,6 +391,7 @@ const CartPage = () => {
           </div>
         )}
       </div>
+
     </div>
   );
 };

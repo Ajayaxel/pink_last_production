@@ -5,6 +5,7 @@ import { ArrowLeft, MapPin, Plus, Edit, Trash2, CreditCard, Truck } from 'lucide
 import {BASE_URL} from '../../api/apiService'; 
 
 
+
 const CheckoutPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -627,6 +628,7 @@ const CheckoutPage = () => {
           </div>
         )}
       </div>
+
     </div>
   );
 };

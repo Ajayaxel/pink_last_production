@@ -9,9 +9,9 @@ const Navbar = () => {
         {/* PARTY WEARS */}
         <div className="relative group">
           <Link to="/party-wears" className="text-black">PARTY WEARS</Link>
-          <div className="absolute top-full left-0 w-[600px] bg-white rounded-[10px] shadow-lg py-4 px-6 flex opacity-0 invisible group-hover:opacity-100 group-hover:visible transition duration-200 z-50">
+          {/* <div className="absolute top-full left-0 w-[600px] bg-white rounded-[10px] shadow-lg py-4 px-6 flex opacity-0 invisible group-hover:opacity-100 group-hover:visible transition duration-200 z-50">
             <div className="w-[200px] pr-4">
-              <img src="https://assets.ajio.com/medias/sys_master/root/20230718/DElg/64b6be4aeebac147fc7726fb/-1117Wx1400H-466368522-black-MODEL.jpg" alt="Party Wears" className="w-full h-auto object-cover" />
+              <img src="/1000348820.jpg" alt="Party Wears" className="w-full h-auto object-cover" />
             </div>
             <div className="flex-1 grid grid-cols-2 p-4 gap-x-6 text-sm text-black">
               <div className="space-y-2">
@@ -21,15 +21,15 @@ const Navbar = () => {
               </div>
              
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* SEMI-PARTY WEARS */}
         <div className="relative group">
           <Link to="/semi-party-wears" className="text-black">SEMI-PARTY WEARS</Link>
-          <div className="absolute top-full left-0 w-[600px] bg-white rounded-[10px] shadow-lg py-4 px-6 flex opacity-0 invisible group-hover:opacity-100 group-hover:visible transition duration-200 z-50">
+          {/* <div className="absolute top-full left-0 w-[600px] bg-white rounded-[10px] shadow-lg py-4 px-6 flex opacity-0 invisible group-hover:opacity-100 group-hover:visible transition duration-200 z-50">
             <div className="w-[200px] pr-4">
-              <img src="/Rectangle 4 (2).png" alt="Semi Party Wears" className="w-full h-auto object-cover" />
+              <img src="/GK_06538-min.JPG" alt="Semi Party Wears" className="w-full h-auto object-cover" />
             </div>
             <div className="flex-1 grid grid-cols-2 p-4 gap-x-6 text-sm text-black">
               <div className="space-y-2">
@@ -41,15 +41,15 @@ const Navbar = () => {
                 <Link to="/semi-party-wears/all" className="text-black block hover:text-[#c49a6c]">View All</Link>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* CO-ORD SETS */}
         <div className="relative group">
           <Link to="/co-ord-sets" className="text-black">CO-ORD SETS</Link>
-          <div className="absolute top-full left-0 w-[600px] bg-white rounded-[10px] shadow-lg py-4 px-6 flex opacity-0 invisible group-hover:opacity-100 group-hover:visible transition duration-200 z-50">
+          {/* <div className="absolute top-full left-0 w-[600px] bg-white rounded-[10px] shadow-lg py-4 px-6 flex opacity-0 invisible group-hover:opacity-100 group-hover:visible transition duration-200 z-50">
             <div className="w-[200px] pr-4">
-              <img src="/Rectangle 8.png" alt="Co-ord Sets" className="w-full h-auto object-cover" />
+              <img src="/GK_06568-min.JPG" alt="Co-ord Sets" className="w-full h-auto object-cover" />
             </div>
             <div className="flex-1 grid grid-cols-2 p-4 gap-x-6 text-sm text-black">
               <div className="space-y-2">
@@ -61,15 +61,15 @@ const Navbar = () => {
                 <Link to="/co-ord-sets/all" className="text-black block hover:text-[#c49a6c]">View All</Link>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* INDO-WESTERN OUTFITS */}
         <div className="relative group">
           <Link to="/indo-western-outfits" className="text-black">INDO-WESTERN OUTFITS</Link>
-          <div className="absolute top-full left-0 w-[600px] bg-white rounded-[10px] shadow-lg py-4 px-6 flex opacity-0 invisible group-hover:opacity-100 group-hover:visible transition duration-200 z-50">
+          {/* <div className="absolute top-full left-0 w-[600px] bg-white rounded-[10px] shadow-lg py-4 px-6 flex opacity-0 invisible group-hover:opacity-100 group-hover:visible transition duration-200 z-50">
             <div className="w-[200px] pr-4">
-              <img src="/Rectangle 12.png" alt="Indo-Western" className="w-full h-auto object-cover" />
+              <img src="/P (12)-min.jpg" alt="Indo-Western" className="w-full h-auto object-cover" />
             </div>
             <div className="flex-1 grid grid-cols-2 p-4 gap-x-6 text-sm text-black">
               <div className="space-y-2">
@@ -81,7 +81,7 @@ const Navbar = () => {
                 <Link to="/indo-western/all" className="text-black block hover:text-[#c49a6c]">View All</Link>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
       </nav>
     </div>

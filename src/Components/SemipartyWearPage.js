@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { FiBookmark, FiX, FiChevronDown, FiFilter, FiStar } from "react-icons/fi";
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import FooterSection from "./FotterSection";
+
 
 const SemipartyWearPage = () => {
   const navigate = useNavigate();
@@ -520,6 +522,7 @@ const SemipartyWearPage = () => {
           )}
         </div>
       </div>
+
     </div>
   );
 };

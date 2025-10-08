@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { FiBookmark, FiX, FiChevronDown, FiFilter, FiStar } from "react-icons/fi";
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import FooterSection from "./FotterSection";
 
-const ExclusiveColletionpage = () => {
+
+const CasualsPage = () => {
+  const navigate = useNavigate();
+
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [selectedColors, setSelectedColors] = useState([]);
@@ -16,12 +21,12 @@ const ExclusiveColletionpage = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [openFilters, setOpenFilters] = useState({});
 
-  // Available filter options (you can modify these based on your actual data)
-  const availableColors = ["Purple", "Black", "Red", "Orange", "Navy", "White", "Blue", "Green", "Pink", "Yellow"];
+  // Available filter options for casual wear
+  const availableColors = ["Blue", "Black", "White", "Gray", "Navy", "Red", "Green", "Pink", "Beige", "Brown"];
   const availableDiscounts = ["10-20%", "20-30%", "30-40%", "40-50%", "50-60%", "60%+"];
-  const availablePatterns = ["Solid", "Printed", "Embroidered", "Striped", "Floral"];
-  const availableFabrics = ["Cotton", "Silk", "Polyester", "Rayon", "Linen"];
-  const availableOccasions = ["Casual", "Party", "Wedding", "Festival", "Office"];
+  const availablePatterns = ["Solid", "Striped", "Printed", "Checked", "Floral", "Abstract"];
+  const availableFabrics = ["Cotton", "Denim", "Polyester", "Cotton Blend", "Linen", "Jersey"];
+  const availableOccasions = ["Daily Wear", "Weekend", "Casual Outings", "Travel", "Work Casual", "Sports"];
   const availableRatings = ["4+", "3+", "2+", "1+"];
 
   useEffect(() => {
@@ -29,23 +34,15 @@ const ExclusiveColletionpage = () => {
       try {
         const res = await axios.get("https://backend.pinkstories.ae/api/products");
         const allProducts = res.data?.data || [];
-  
-        // Filter products with discount > 30
-        const discountedProducts = allProducts.filter(p => {
-          const price = Number(p.price); // Ensure it's a number
-          return !isNaN(price) && price > 3000;
-        });
-  
-        setProducts(discountedProducts);
-        setFilteredProducts(discountedProducts);
+        const casualProducts = allProducts.filter(p => p.category?.toLowerCase() === 'casual' || p.category?.toLowerCase() === 'casuals');
+        setProducts(casualProducts);
+        setFilteredProducts(casualProducts);
       } catch (err) {
         console.error("Failed to fetch products", err);
       }
     };
-  
     fetchProducts();
   }, []);
-  
 
   // Check if any filters are active
   const hasActiveFilters = () => {
@@ -249,7 +246,28 @@ const ExclusiveColletionpage = () => {
           </div>
         </div>
 
-
+        {/* Color Filter */}
+        <div className="border-b pb-2 mb-4">
+          <div className="flex justify-between items-center cursor-pointer" onClick={() => toggleFilter('Color')}>
+            <h3 className="text-md font-medium">Color</h3>
+            <FiChevronDown className={`transition-transform ${openFilters['Color'] ? 'rotate-180' : ''}`} />
+          </div>
+          {openFilters['Color'] && (
+            <div className="mt-2 space-y-2">
+              {availableColors.map(color => (
+                <label key={color} className="flex items-center text-sm">
+                  <input
+                    type="checkbox"
+                    checked={selectedColors.includes(color)}
+                    onChange={() => toggleColor(color)}
+                    className="mr-2"
+                  />
+                  {color}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="mb-6">
           <h4 className="font-semibold mb-2">Price</h4>
@@ -430,7 +448,7 @@ const ExclusiveColletionpage = () => {
       <div className="flex-1 p-6 relative">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h2 className="text-2xl font-bold">Exclusive Collection</h2>
+            <h2 className="text-2xl font-bold">Casual Collection</h2>
             <p className="text-sm text-gray-600">
               {hasActiveFilters() 
                 ? `${filteredProducts.length} products found` 
@@ -451,13 +469,17 @@ const ExclusiveColletionpage = () => {
             <p className="text-center col-span-full text-gray-600">
               {hasActiveFilters() 
                 ? "🚫 No products found matching your filters." 
-                : "🚫 No kurtha products found."
+                : "🚫 No casual wear products found."
               }
             </p>
           ) : (
             filteredProducts.map(item => {
               const mockData = generateMockData(item);
               return (
+                <div
+                key={item._id}
+                className="bg-white  transition cursor-pointer"
+                onClick={() => navigate(`/shop-details/${item._id}`)}>
                 <div key={item._id} className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer group relative">
                   {/* New Badge */}
                   {Math.random() > 0.8 && (
@@ -521,6 +543,7 @@ const ExclusiveColletionpage = () => {
                     </div>
                   </div>
                 </div>
+                </div>
               );
             })
           )}
@@ -530,4 +553,4 @@ const ExclusiveColletionpage = () => {
   );
 };
 
-export default ExclusiveColletionpage;
+export default CasualsPage;

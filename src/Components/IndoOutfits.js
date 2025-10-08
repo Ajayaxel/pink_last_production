@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { FiBookmark, FiX, FiChevronDown, FiFilter, FiStar } from "react-icons/fi";
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import FooterSection from "./FotterSection";
+
 
 const IndoOutfits = () => {
     const navigate = useNavigate();
@@ -523,6 +525,7 @@ const IndoOutfits = () => {
           )}
         </div>
       </div>
+
     </div>
   );
 };

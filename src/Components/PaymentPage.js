@@ -145,108 +145,108 @@ const PaymentDetails = () => {
 
   const handlePayment = async () => {
     if (!stripe || !elements) return;
-
+  
     setLoading(true);
-
+  
     try {
-      const res = await fetch('https://backend.pinkstories.ae/api/payment/create-payment-intent', {
+      // ✅ Convert AED to fils
+      const amountInFils = Math.round(finalTotal * 100);
+  
+      const res = await fetch(`${BASE_URL}payment/create-payment-intent`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: totalAmount }),
+        body: JSON.stringify({ amount: amountInFils }),
       });
-
+  
       const { clientSecret } = await res.json();
-
+  
       const result = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
           card: elements.getElement(CardElement),
         },
       });
-
+  
       if (result.error) {
-        // Navigate to failure page with error details
+        // Navigate to failure page
         navigate('/payment-failed', {
           state: {
             error: result.error,
             errorMessage: result.error.message,
-            amount: totalAmount,
-            userId: userId,
-            cartItems: cartItems,
-            deliveryAddress: deliveryAddress,
-            paymentIntent: { id: 'failed', status: 'failed' }
-          }
+            amount: finalTotal,
+            userId,
+            cartItems,
+            deliveryAddress,
+            paymentIntent: { id: 'failed', status: 'failed' },
+          },
         });
       } else if (result.paymentIntent.status === 'succeeded') {
         console.log('🚀 Payment successful, creating order...');
-
-        // Create order in the database - USING SAME FUNCTION AS CHECKOUT
+  
+        // Create order
         let order;
         try {
           order = await createOrder(deliveryAddress);
           console.log('📋 Order creation result:', order);
-
+  
           if (!order) {
             throw new Error('Order creation returned empty result');
           }
         } catch (orderError) {
-          console.error('❌ Failed to create order after successful payment:', orderError);
+          console.error('❌ Order creation failed after payment:', orderError);
           navigate('/payment-failed', {
             state: {
               error: { message: `Failed to create order: ${orderError.message}` },
               errorMessage: `Failed to create order: ${orderError.message}`,
-              amount: totalAmount,
-              userId: userId,
-              cartItems: cartItems,
-              deliveryAddress: deliveryAddress,
-              paymentIntent: result.paymentIntent
-            }
+              amount: finalTotal,
+              userId,
+              cartItems,
+              deliveryAddress,
+              paymentIntent: result.paymentIntent,
+            },
           });
           return;
         }
-
-        // Update stock quantity on backend
+  
+        // Update stock
         console.log('📦 Updating stock quantities...');
         const stockUpdateSuccess = await updateStockQuantities();
-        
+  
         if (!stockUpdateSuccess) {
-          console.warn('⚠️ Payment successful and order created, but stock update failed');
+          console.warn('⚠️ Stock update failed after payment');
         }
-
-        console.log('✅ Order process completed successfully');
-      
-        // Navigate to success page with order details
+  
+        // Navigate to success page
         navigate('/payment-success', {
           state: {
             paymentIntent: result.paymentIntent,
-            amount: totalAmount,
-            userId: userId,
-            cartItems: cartItems,
-            order: order,
+            amount: finalTotal,
+            userId,
+            cartItems,
+            order,
             orderId: order?.orderId || order?._id,
-            stockUpdateSuccess: stockUpdateSuccess,
-            deliveryAddress: deliveryAddress
-          }
+            stockUpdateSuccess,
+            deliveryAddress,
+          },
         });
       }
-      
     } catch (err) {
       console.error('🔥 Payment processing error:', err);
-      // Navigate to failure page with generic error
       navigate('/payment-failed', {
         state: {
           error: { message: 'An unexpected error occurred while processing your payment' },
           errorMessage: 'An unexpected error occurred while processing your payment',
-          amount: totalAmount,
-          userId: userId,
-          cartItems: cartItems,
-          deliveryAddress: deliveryAddress,
-          paymentIntent: { id: 'error', status: 'error' }
-        }
+          amount: finalTotal,
+          userId,
+          cartItems,
+          deliveryAddress,
+          paymentIntent: { id: 'error', status: 'error' },
+        },
       });
     } finally {
       setLoading(false);
     }
   };
+  
 
   // Calculate final totals - SAME AS CHECKOUT
   const shippingCost = calculateShipping();

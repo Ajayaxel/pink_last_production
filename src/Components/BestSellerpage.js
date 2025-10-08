@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { FiBookmark, FiX, FiChevronDown, FiFilter, FiStar } from "react-icons/fi";
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import FooterSection from "./FotterSection";
+
 
 const BestSellerPage = () => {
   const navigate = useNavigate();
@@ -33,14 +35,14 @@ const BestSellerPage = () => {
         const res = await axios.get("https://backend.pinkstories.ae/api/products");
         const allProducts = res.data?.data || [];
   
-        // Filter products with discount > 30
-        const discountedProducts = allProducts.filter(p => {
-          const discount = Number(p.discount); // Ensure it's a number
-          return !isNaN(discount) && discount > 30;
+        // Filter products with price less than 200 AED
+        const affordableProducts = allProducts.filter(p => {
+          const price = Number(p.price); // Ensure it's a number
+          return !isNaN(price) && price < 200;
         });
   
-        setProducts(discountedProducts);
-        setFilteredProducts(discountedProducts);
+        setProducts(affordableProducts);
+        setFilteredProducts(affordableProducts);
       } catch (err) {
         console.error("Failed to fetch products", err);
       }
@@ -437,7 +439,7 @@ const BestSellerPage = () => {
             <p className="text-sm text-gray-600">
               {hasActiveFilters() 
                 ? `${filteredProducts.length} products found` 
-                : `${products.length} products available`
+                : `${products.length} products available (Under AED 200)`
               }
             </p>
           </div>
@@ -454,7 +456,7 @@ const BestSellerPage = () => {
             <p className="text-center col-span-full text-gray-600">
               {hasActiveFilters() 
                 ? "🚫 No products found matching your filters." 
-                : "🚫 No kurtha products found."
+                : "🚫 No products found under AED 200."
               }
             </p>
           ) : (
@@ -534,6 +536,7 @@ const BestSellerPage = () => {
           )}
         </div>
       </div>
+
     </div>
   );
 };

@@ -20,7 +20,6 @@ const ShopPage = ({ heading = "Shop" }) => {
     if (!imgPath || imgPath.length === 0) return '/placeholder-image.jpg';
     return `https://backend.pinkstories.ae/${imgPath.replace(/^\/+/, '')}`;
   };
-  ;
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -167,7 +166,7 @@ const ShopPage = ({ heading = "Shop" }) => {
         </div>
       </div>
 
-      {/* Product Grid - Enhanced Responsive Design */}
+      {/* Product Grid - Consistent Card Ratios Across All Devices */}
       <div className="px-3 sm:px-6 md:px-10 lg:px-16 py-6 sm:py-8">
         {loading ? (
           <div className="flex justify-center items-center min-h-[50vh] sm:min-h-[400px]">
@@ -192,34 +191,35 @@ const ShopPage = ({ heading = "Shop" }) => {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 md:gap-6">
+          // Consistent grid with uniform card sizing - Single column on small devices
+          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
             {sortedProducts.map((item) => (
               <div
                 key={item._id}
-                className="group bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-xl sm:hover:shadow-2xl transition-all duration-300 cursor-pointer overflow-hidden border border-gray-100 hover:border-pink-200 hover:-translate-y-1"
+                className="group bg-white rounded-lg sm:rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden border border-gray-100 hover:border-pink-200 hover:-translate-y-1 w-full"
                 onClick={() => navigate(`/shop-details/${item._id}`)}
               >
-                {/* Image Container - Responsive */}
-                <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+                {/* Image Container - Fixed aspect ratio across all devices */}
+                <div className="relative w-full aspect-square overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
                   <img
                     src={item.images?.length ? buildImageUrl(item.images[0]) : '/placeholder-image.jpg'}
                     alt={item.productName}
-                    className="w-full h-full object-fill group-hover:scale-110 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
                   />
                   
-                  {/* Discount Badge - Responsive */}
+                  {/* Discount Badge - Consistent sizing */}
                   {item.discount && (
-                    <div className="absolute top-2 sm:top-3 left-2 sm:left-3 bg-gradient-to-r from-red-500 to-pink-500 text-white px-2 sm:px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                    <div className="absolute top-1 sm:top-2 left-1 sm:left-2 bg-gradient-to-r from-red-500 to-pink-500 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-bold shadow-lg">
                       -{item.discount}%
                     </div>
                   )}
                   
-                  {/* Quick View Overlay - Hidden on mobile, visible on larger screens */}
+                  {/* Quick View Overlay - Scaled appropriately */}
                   <div className="hidden sm:flex absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 items-center justify-center">
                     <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-4 group-hover:translate-y-0">
-                      <div className="bg-white rounded-full p-3 shadow-xl backdrop-blur-sm">
-                        <svg className="w-5 h-5 sm:w-6 sm:h-6 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="bg-white rounded-full p-2 sm:p-3 shadow-xl backdrop-blur-sm">
+                        <svg className="w-4 h-4 sm:w-5 sm:h-5 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
@@ -227,55 +227,54 @@ const ShopPage = ({ heading = "Shop" }) => {
                     </div>
                   </div>
 
-                  {/* New Badge for recent products - Responsive */}
+                  {/* New Badge - Consistent positioning */}
                   {item.dateAdded && new Date(item.dateAdded) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) && (
-                    <div className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-gradient-to-r from-green-400 to-blue-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                    <div className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-gradient-to-r from-green-400 to-blue-500 text-white px-1.5 sm:px-2 py-0.5 rounded-full text-xs font-semibold">
                       NEW
                     </div>
                   )}
                 </div>
 
-                {/* Product Info - Responsive */}
-                <div className="p-3 sm:p-4 lg:p-5 space-y-2 sm:space-y-3">
-                  {/* Product Name - Responsive */}
-                  <h2 className="text-sm sm:text-base font-semibold text-gray-900 line-clamp-2 group-hover:text-pink-600 transition-colors duration-200 leading-tight">
+                {/* Product Info - Consistent spacing and proportions */}
+                <div className="p-2 sm:p-3 lg:p-4 space-y-1 sm:space-y-2 flex-1 flex flex-col">
+                  {/* Product Name - Consistent text scaling */}
+                  <h2 className="text-xs sm:text-sm lg:text-base font-semibold text-gray-900 line-clamp-2 group-hover:text-pink-600 transition-colors duration-200 leading-tight flex-1">
                     {item.productName}
                   </h2>
 
-                  {/* Material - Hidden on small screens, visible on medium+ */}
-                  <div className="hidden sm:flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-pink-400 rounded-full"></div>
-                    <p className="text-xs sm:text-sm text-gray-600 capitalize font-medium">
+                  {/* Material - Responsive visibility */}
+                  <div className="hidden sm:flex items-center space-x-1 lg:space-x-2">
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-pink-400 rounded-full"></div>
+                    <p className="text-xs sm:text-sm text-gray-600 capitalize font-medium truncate">
                       {item.material || "Premium Material"}
                     </p>
                   </div>
 
-                  {/* Price Section - Responsive */}
+                  {/* Price Section - Consistent layout */}
                   <div className="flex items-center justify-between">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
-                      <span className="text-base sm:text-lg lg:text-xl font-bold text-gray-900">
+                    <div className="flex flex-col space-y-0.5">
+                      <span className="text-sm sm:text-base lg:text-lg font-bold text-gray-900">
                         AED {item.price ?? "N/A"}
                       </span>
                       {item.discount > 0 && item.discount < 100 && (
-                       <span className="text-xs sm:text-sm text-gray-400 line-through">
+                        <span className="text-xs sm:text-sm text-gray-400 line-through">
                           AED {((item.price || 0) / (1 - item.discount / 100)).toFixed(2)}
-                            </span>
-                        )}
-
+                        </span>
+                      )}
                     </div>
-                    {/* Star rating - Hidden on mobile for space */}
+                    {/* Star rating - Consistent sizing */}
                     <div className="hidden md:flex items-center space-x-1">
-                      <svg className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
+                      <svg className="w-3 h-3 text-yellow-400 fill-current" viewBox="0 0 20 20">
                         <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
                       </svg>
                       <span className="text-xs text-gray-500">4.5</span>
                     </div>
                   </div>
 
-                  {/* Color Variants - Responsive, hidden on very small screens */}
+                  {/* Color Variants - Consistent sizing */}
                   {item.colorVariants && (
-                    <div className="hidden xs:flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
+                    <div className="hidden sm:flex items-center justify-between">
+                      <div className="flex items-center space-x-1 sm:space-x-2">
                         <span className="text-xs text-gray-500 font-medium">Colors:</span>
                         <div className="flex space-x-1">
                           {(() => {
@@ -285,7 +284,7 @@ const ShopPage = ({ heading = "Shop" }) => {
                               return colors.slice(0, 3).map((color, index) => (
                                 <div
                                   key={color}
-                                  className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 rounded-full border-2 border-white shadow-md ring-1 ring-gray-200 hover:scale-110 transition-transform cursor-pointer"
+                                  className="w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 border-white shadow-md ring-1 ring-gray-200 hover:scale-110 transition-transform cursor-pointer"
                                   style={{ backgroundColor: color }}
                                   title={color}
                                 />
@@ -300,7 +299,7 @@ const ShopPage = ({ heading = "Shop" }) => {
                               const colors = JSON.parse(item.colorVariants[0] || "[]");
                               if (Array.isArray(colors) && colors.length > 3) {
                                 return (
-                                  <div className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 rounded-full bg-gray-200 border-2 border-white shadow-sm flex items-center justify-center">
+                                  <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-gray-200 border-2 border-white shadow-sm flex items-center justify-center">
                                     <span className="text-xs text-gray-600 font-bold">+{colors.length - 3}</span>
                                   </div>
                                 );
@@ -314,8 +313,6 @@ const ShopPage = ({ heading = "Shop" }) => {
                       </div>
                     </div>
                   )}
-
-           
                 </div>
               </div>
             ))}
